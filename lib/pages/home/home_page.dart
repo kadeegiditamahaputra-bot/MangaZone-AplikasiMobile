@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/manga.dart';
 import '../../services/api_service.dart';
 import 'Baca.dart';
+import '../../services/favorite_manager.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,6 +13,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String _selectedGenre = 'Semua';
+  late Future<List<Manga>> _mangaFuture;
   final List<String> _genres = [
     'Semua',
     'Action',
@@ -22,6 +24,12 @@ class _HomePageState extends State<HomePage> {
     'Romance',
     'Sci-Fi',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _mangaFuture = ApiService.getTopManga();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +108,7 @@ class _HomePageState extends State<HomePage> {
           // 🔹 List Manga
           Expanded(
             child: FutureBuilder<List<Manga>>(
-              future: ApiService.getTopManga(),
+              future: _mangaFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -124,6 +132,9 @@ class _HomePageState extends State<HomePage> {
                   itemCount: mangas.length,
                   itemBuilder: (context, index) {
                     final manga = mangas[index];
+                    manga.isFavorite = FavoriteManager.favorites.any(
+                      (m) => m.malId == manga.malId,
+                    );
                     return Card(
                       elevation: 5,
                       margin: const EdgeInsets.only(bottom: 15),
@@ -187,33 +198,76 @@ class _HomePageState extends State<HomePage> {
                                       );
                                     }).toList(),
                                   ),
+
                                   const SizedBox(height: 15),
 
-                                  ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.deepPurple,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20, vertical: 10),
-                                    ),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => Baca(
-                                              manga:
-                                                  manga), // 🔹 kirim data ke halaman baca
+                                  Row(
+                                    children: [
+                                      ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.deepPurple,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                            vertical: 10,
+                                          ),
                                         ),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.menu_book,
-                                        color: Colors.white),
-                                    label: const Text(
-                                      "Baca",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  Baca(manga: manga),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.menu_book,
+                                          color: Colors.white,
+                                        ),
+                                        label: const Text(
+                                          "Baca",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: IconButton(
+                                          onPressed: () {
+                                            if (manga.isFavorite) {
+                                              FavoriteManager.removeFavorite(
+                                                  manga);
+                                            } else {
+                                              FavoriteManager.addFavorite(
+                                                  manga);
+                                            }
+
+                                            print(
+                                                "Total Favorite: ${FavoriteManager.favorites.length}");
+
+                                            setState(() {
+                                              manga.isFavorite =
+                                                  !manga.isFavorite;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            manga.isFavorite
+                                                ? Icons.favorite
+                                                : Icons.favorite_border,
+                                            color: Colors.red,
+                                            size: 28,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

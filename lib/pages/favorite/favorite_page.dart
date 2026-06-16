@@ -1,98 +1,94 @@
 import 'package:flutter/material.dart';
+import '../../services/favorite_manager.dart';
 
-class FavoritePage extends StatelessWidget {
+class FavoritePage extends StatefulWidget {
   const FavoritePage({super.key});
 
   @override
+  State<FavoritePage> createState() => _FavoritePageState();
+}
+
+class _FavoritePageState extends State<FavoritePage> {
+  @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> favoriteManga = [
-      {
-        "title": "One Piece",
-        "genre": "Adventure",
-      },
-      {
-        "title": "Naruto",
-        "genre": "Action",
-      },
-      {
-        "title": "Attack on Titan",
-        "genre": "Fantasy",
-      },
-    ];
+    final favoriteManga = FavoriteManager.favorites;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           "Favorite Manga",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        centerTitle: true,
         backgroundColor: Colors.deepPurple,
+        centerTitle: true,
+        elevation: 4,
       ),
-
       body: favoriteManga.isEmpty
           ? const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 80,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 15),
-                  Text(
-                    "Belum ada manga favorit",
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
+              child: Text(
+                "Belum ada manga favorit",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             )
           : ListView.builder(
+              padding: const EdgeInsets.all(12),
               itemCount: favoriteManga.length,
               itemBuilder: (context, index) {
                 final manga = favoriteManga[index];
 
                 return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 15,
-                    vertical: 8,
-                  ),
                   elevation: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.deepPurple,
-                      child: Icon(
-                        Icons.menu_book,
-                        color: Colors.white,
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        manga.imageUrl,
+                        width: 55,
+                        height: 75,
+                        fit: BoxFit.cover,
                       ),
                     ),
                     title: Text(
-                      manga["title"]!,
+                      manga.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                     subtitle: Text(
-                      "Genre: ${manga["genre"]}",
+                      manga.genres.join(", "),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 13,
+                      ),
                     ),
                     trailing: IconButton(
                       icon: const Icon(
                         Icons.favorite,
                         color: Colors.red,
+                        size: 28,
                       ),
                       onPressed: () {
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              "${manga["title"]} dihapus dari favorit",
-                            ),
-                          ),
-                        );
+                        setState(() {
+                          manga.isFavorite = false;
+                          FavoriteManager.removeFavorite(manga);
+                        });
                       },
                     ),
                   ),

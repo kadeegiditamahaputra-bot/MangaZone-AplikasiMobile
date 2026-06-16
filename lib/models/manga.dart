@@ -7,6 +7,8 @@ class Manga {
   final int chapters;
   final String synopsis;
 
+  bool isFavorite;
+
   Manga({
     required this.malId,
     required this.title,
@@ -15,6 +17,7 @@ class Manga {
     required this.genres,
     required this.chapters,
     required this.synopsis,
+    this.isFavorite = false,
   });
 
   factory Manga.fromJson(Map<String, dynamic> json) {
@@ -29,6 +32,7 @@ class Manga {
               ?.map((e) => e['name'].toString())
               .toList() ??
           [],
+      isFavorite: false,
     );
   }
 }

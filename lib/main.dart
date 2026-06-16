@@ -21,9 +21,7 @@ void main() async {
   if (kIsWeb) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfiWeb;
-  } else if (Platform.isWindows ||
-      Platform.isLinux ||
-      Platform.isMacOS) {
+  } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
@@ -60,13 +58,6 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomePage(),
-    const FavoritePage(),
-    const ProfilePage(),
-    const SettingsPage(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -75,35 +66,46 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+    Widget currentPage;
 
+    switch (_selectedIndex) {
+      case 0:
+        currentPage = const HomePage();
+        break;
+      case 1:
+        currentPage = const FavoritePage();
+        break;
+      case 2:
+        currentPage = const ProfilePage();
+        break;
+      case 3:
+        currentPage = const SettingsPage();
+        break;
+      default:
+        currentPage = const HomePage();
+    }
+
+    return Scaffold(
+      body: currentPage,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
-
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: 'Favorite',
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
           ),
-
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
