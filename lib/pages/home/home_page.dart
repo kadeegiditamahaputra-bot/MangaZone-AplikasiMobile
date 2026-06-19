@@ -250,7 +250,7 @@ class _HomePageState extends State<HomePage> {
                                                   manga);
                                             }
 
-                                            print(
+                                            debugPrint(
                                                 "Total Favorite: ${FavoriteManager.favorites.length}");
 
                                             setState(() {
