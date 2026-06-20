@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'settings_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -17,8 +19,9 @@ class _ProfilePageState extends State<ProfilePage> {
   File? _profileImage;
   Uint8List? _webImage;
 
-  String _name = '';
-  String _email = '';
+  // Ambil user Google dari FirebaseAuth
+  final User? _user = FirebaseAuth.instance.currentUser;
+
   String _favoriteManga = '';
   String _favoriteGenre = '';
   String _bio = '';
@@ -34,7 +37,6 @@ class _ProfilePageState extends State<ProfilePage> {
       if (pickedFile != null) {
         if (kIsWeb) {
           final bytes = await pickedFile.readAsBytes();
-
           setState(() {
             _webImage = bytes;
           });
@@ -60,8 +62,8 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
 
-      debugPrint("Nama: $_name");
-      debugPrint("Email: $_email");
+      debugPrint("Nama (Google): ${_user?.displayName}");
+      debugPrint("Email (Google): ${_user?.email}");
       debugPrint("Manga Favorit: $_favoriteManga");
       debugPrint("Genre Favorit: $_favoriteGenre");
       debugPrint("Bio: $_bio");
@@ -72,14 +74,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     ImageProvider? profileProvider;
 
-    if (kIsWeb) {
-      if (_webImage != null) {
-        profileProvider = MemoryImage(_webImage!);
-      }
-    } else {
-      if (_profileImage != null) {
-        profileProvider = FileImage(_profileImage!);
-      }
+    if (_user?.photoURL != null) {
+      profileProvider = NetworkImage(_user!.photoURL!);
+    } else if (kIsWeb && _webImage != null) {
+      profileProvider = MemoryImage(_webImage!);
+    } else if (_profileImage != null) {
+      profileProvider = FileImage(_profileImage!);
     }
 
     return Scaffold(
@@ -90,59 +90,158 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.menu,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const SettingsPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
-
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Form(
           key: _formKey,
-
           child: Column(
             children: [
-              GestureDetector(
-                onTap: _pickImage,
-
-                child: Stack(
-                  alignment: Alignment.bottomRight,
-
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Colors.deepPurple,
+                      Colors.purpleAccent,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.grey[300],
-                      backgroundImage: profileProvider,
-
-                      child: profileProvider == null
-                          ? const Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Colors.grey,
-                            )
-                          : null,
-                    ),
-
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: const BoxDecoration(
-                        color: Colors.deepPurple,
-                        shape: BoxShape.circle,
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 55,
+                        backgroundColor: Colors.white,
+                        backgroundImage: profileProvider,
+                        child: profileProvider == null
+                            ? const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.grey,
+                        )
+                            : null,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _user?.displayName ?? "User",
+                      style: const TextStyle(
                         color: Colors.white,
-                        size: 20,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      _user?.email ?? "",
+                      style: const TextStyle(
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.amber,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.workspace_premium,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            "Free Member",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
 
-              const Text(
-                "Ketuk foto untuk mengganti profil",
-                style: TextStyle(
-                  color: Colors.grey,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFFFD700),
+                      Color(0xFFFFA500),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.workspace_premium,
+                      color: Colors.white,
+                      size: 50,
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Upgrade ke Premium",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      "Nikmati tanpa iklan dan akses chapter lebih cepat",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Fitur Premium masih dalam pengembangan",
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.star),
+                      label: const Text("Upgrade Sekarang"),
+                    ),
+                  ],
                 ),
               ),
 
@@ -151,103 +250,45 @@ class _ProfilePageState extends State<ProfilePage> {
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.all(15),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.menu_book,
-                        size: 40,
-                        color: Colors.deepPurple,
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        "MangaZone Reader",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: "Manga Favorit",
+                          prefixIcon: Icon(Icons.menu_book),
+                          border: OutlineInputBorder(),
                         ),
+                        onSaved: (value) => _favoriteManga = value ?? '',
+                      ),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: "Genre Favorit",
+                          prefixIcon: Icon(Icons.category),
+                          border: OutlineInputBorder(),
+                        ),
+                        onSaved: (value) => _favoriteGenre = value ?? '',
+                      ),
+                      const SizedBox(height: 15),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: "Tentang Saya",
+                          prefixIcon: Icon(Icons.description),
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: 3,
+                        onSaved: (value) => _bio = value ?? '',
                       ),
                     ],
                   ),
                 ),
               ),
 
-              const SizedBox(height: 25),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: "Nama Pengguna",
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
-                ),
-                onSaved: (value) => _name = value ?? '',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Nama tidak boleh kosong";
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 15),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: "Email",
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                onSaved: (value) => _email = value ?? '',
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "Email tidak boleh kosong";
-                  }
-                  if (!value.contains('@')) {
-                    return "Format email tidak valid";
-                  }
-                  return null;
-                },
-              ),
-
-              const SizedBox(height: 15),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: "Manga Favorit",
-                  prefixIcon: Icon(Icons.menu_book),
-                  border: OutlineInputBorder(),
-                ),
-                onSaved: (value) => _favoriteManga = value ?? '',
-              ),
-
-              const SizedBox(height: 15),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: "Genre Favorit",
-                  prefixIcon: Icon(Icons.category),
-                  border: OutlineInputBorder(),
-                ),
-                onSaved: (value) => _favoriteGenre = value ?? '',
-              ),
-
-              const SizedBox(height: 15),
-
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: "Tentang Saya",
-                  prefixIcon: Icon(Icons.description),
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                onSaved: (value) => _bio = value ?? '',
-              ),
-
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
 
               SizedBox(
                 width: double.infinity,
@@ -261,8 +302,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 15,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
                     ),
                   ),
                 ),

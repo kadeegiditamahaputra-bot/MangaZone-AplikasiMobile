@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "993624332604",
+    "project_id": "mangazone-73666",
+    "storage_bucket": "mangazone-73666.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:993624332604:android:8b84ab5ee56c21260c2639",
+        "android_client_info": {
+          "package_name": "com.example.mangazone"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "993624332604-e2a2dih3d1mca9m8lrjf0dn6rfb47bhf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mangazone",
+            "certificate_hash": "b9d7534fc21219cf417232ec0045aa94eab94ffa"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEInsj010TgSWNC_qHwnTamWjAPylTyis"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,11 +1,15 @@
+import 'pages/login/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Pages MangaZone
 import 'pages/home/home_page.dart';
 import 'pages/favorite/favorite_page.dart';
 import 'pages/profile/profile_page.dart';
-import 'pages/settings/settings_page.dart';
+import 'pages/transaksi/transaksi_page.dart';
 
 // SQFlite Multi Platform
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -17,7 +21,12 @@ import 'dart:io' show Platform;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Init Database
+  // Init Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Init Database (multi platform)
   if (kIsWeb) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfiWeb;
@@ -43,7 +52,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MainNavigation(),
+      home: const LoginPage(),
     );
   }
 }
@@ -76,14 +85,17 @@ class _MainNavigationState extends State<MainNavigation> {
         currentPage = const FavoritePage();
         break;
       case 2:
-        currentPage = const ProfilePage();
+        currentPage = const TransaksiPage();
         break;
       case 3:
-        currentPage = const SettingsPage();
+        currentPage = const ProfilePage();
         break;
       default:
         currentPage = const HomePage();
     }
+
+    // Ambil user Google
+    final User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       body: currentPage,
@@ -93,22 +105,28 @@ class _MainNavigationState extends State<MainNavigation> {
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          const BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
             label: 'Favorite',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.payment),
+            label: 'transaksi',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: user?.photoURL != null
+                ? CircleAvatar(
+              radius: 12,
+              backgroundImage: NetworkImage(user!.photoURL!),
+            )
+                : const Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),

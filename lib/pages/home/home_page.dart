@@ -3,6 +3,7 @@ import '../../models/manga.dart';
 import '../../services/api_service.dart';
 import 'Baca.dart';
 import '../../services/favorite_manager.dart';
+import 'searching.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,27 +38,99 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.white,
+        elevation: 0,
         centerTitle: true,
-        title: const Text(
-          "MangaZone",
-          style: TextStyle(
-            color: Colors.deepPurple,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
+        title: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.deepPurple.shade50,
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.verified_user_outlined),
+              const SizedBox(width: 8),
+              const Text(
+                "MangaZone",
+                style: TextStyle(
+                  color: Colors.deepPurple,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFFFD54F),
+                      Color(0xFFFF9800),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  "FREE",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.search, color: Colors.deepPurple),
-          onPressed: () {
-            // aksi ketika search ditekan
-          },
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: Container(
+            margin: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.search_rounded,
+                color: Colors.deepPurple,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SearchingPage(),
+                  ),
+                );
+              },
+            ),
+          ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.deepPurple),
-            onPressed: () {
-              // aksi ketika notifikasi ditekan
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Container(
+              margin: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.notifications_none_rounded,
+                  color: Colors.deepPurple,
+                ),
+                onPressed: () {},
+              ),
+            ),
           ),
         ],
       ),
