@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../models/manga.dart';
 import '../../services/api_service.dart';
 import 'Baca.dart';
-import '../../services/favorite_manager.dart';
+import '../../services/favorite_service.dart';
 import 'searching.dart';
 
 class HomePage extends StatefulWidget {
@@ -34,6 +37,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -136,11 +141,9 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Column(
         children: [
-          // 🔹 Header gradient
-
           const SizedBox(height: 10),
 
-          // 🔹 Genre filter chips
+          // Genre filter chips
           SizedBox(
             height: 40,
             child: ListView.builder(
@@ -160,10 +163,9 @@ class _HomePageState extends State<HomePage> {
                     labelStyle: TextStyle(
                       color: selected ? Colors.white : Colors.deepPurple,
                     ),
-                    checkmarkColor: Colors.white, // 🔹 centang jadi putih
+                    checkmarkColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          30), // 🔹 lengkungan lebih halus
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     onSelected: (_) {
                       setState(() {
@@ -178,7 +180,7 @@ class _HomePageState extends State<HomePage> {
 
           const SizedBox(height: 10),
 
-          // 🔹 List Manga
+          // List Manga
           Expanded(
             child: FutureBuilder<List<Manga>>(
               future: _mangaFuture,
@@ -190,8 +192,7 @@ class _HomePageState extends State<HomePage> {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                      child: Text('Data manga tidak ditemukan'));
+                  return const Center(child: Text('Data manga tidak ditemukan'));
                 }
 
                 // filter sesuai genre
@@ -205,149 +206,152 @@ class _HomePageState extends State<HomePage> {
                   itemCount: mangas.length,
                   itemBuilder: (context, index) {
                     final manga = mangas[index];
-                    manga.isFavorite = FavoriteManager.favorites.any(
-                      (m) => m.malId == manga.malId,
-                    );
-                    return Card(
-                      elevation: 5,
-                      margin: const EdgeInsets.only(bottom: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(20),
-                              bottomLeft: Radius.circular(20),
-                            ),
-                            child: Image.network(
-                              manga.imageUrl,
-                              width: 110,
-                              height: 150,
-                              fit: BoxFit.cover,
-                            ),
+
+                    // StreamBuilder untuk memantau apakah manga ini ada di favorites user
+                    return StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(uid)
+                          .collection('favorites')
+                          .doc(manga.malId.toString())
+                          .snapshots(),
+                      builder: (context, favSnapshot) {
+                        final isFavorite = favSnapshot.data?.exists ?? false;
+
+                        return Card(
+                          elevation: 5,
+                          margin: const EdgeInsets.only(bottom: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(15),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    manga.title,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  bottomLeft: Radius.circular(20),
+                                ),
+                                child: Image.network(
+                                  manga.imageUrl,
+                                  width: 110,
+                                  height: 150,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(15),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.star,
-                                          color: Colors.amber, size: 20),
-                                      const SizedBox(width: 5),
                                       Text(
-                                        "${manga.score}",
-                                        style:
-                                            TextStyle(color: Colors.grey[700]),
+                                        manga.title,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  // 🔹 Genre chips
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 4,
-                                    children: manga.genres.map((genre) {
-                                      return Chip(
-                                        label: Text(genre),
-                                        backgroundColor:
-                                            Colors.deepPurple.shade100,
-                                        labelStyle: const TextStyle(
-                                          color: Colors.deepPurple,
-                                          fontSize: 12,
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-
-                                  const SizedBox(height: 15),
-
-                                  Row(
-                                    children: [
-                                      ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.deepPurple,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.star,
+                                              color: Colors.amber, size: 20),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            "${manga.score}",
+                                            style: TextStyle(color: Colors.grey[700]),
                                           ),
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 10,
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  Baca(manga: manga),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 6,
+                                        runSpacing: 4,
+                                        children: manga.genres.map((genre) {
+                                          return Chip(
+                                            label: Text(genre),
+                                            backgroundColor: Colors.deepPurple.shade100,
+                                            labelStyle: const TextStyle(
+                                              color: Colors.deepPurple,
+                                              fontSize: 12,
                                             ),
                                           );
-                                        },
-                                        icon: const Icon(
-                                          Icons.menu_book,
-                                          color: Colors.white,
-                                        ),
-                                        label: const Text(
-                                          "Baca",
-                                          style: TextStyle(color: Colors.white),
-                                        ),
+                                        }).toList(),
                                       ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade50,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: IconButton(
-                                          onPressed: () {
-                                            if (manga.isFavorite) {
-                                              FavoriteManager.removeFavorite(
-                                                  manga);
-                                            } else {
-                                              FavoriteManager.addFavorite(
-                                                  manga);
-                                            }
-
-                                            debugPrint(
-                                                "Total Favorite: ${FavoriteManager.favorites.length}");
-
-                                            setState(() {
-                                              manga.isFavorite =
-                                                  !manga.isFavorite;
-                                            });
-                                          },
-                                          icon: Icon(
-                                            manga.isFavorite
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
-                                            color: Colors.red,
-                                            size: 28,
+                                      const SizedBox(height: 15),
+                                      Row(
+                                        children: [
+                                          ElevatedButton.icon(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.deepPurple,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 20,
+                                                vertical: 10,
+                                              ),
+                                            ),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => Baca(manga: manga),
+                                                ),
+                                              );
+                                            },
+                                            icon: const Icon(
+                                              Icons.menu_book,
+                                              color: Colors.white,
+                                            ),
+                                            label: const Text(
+                                              "Baca",
+                                              style: TextStyle(color: Colors.white),
+                                            ),
                                           ),
-                                        ),
+                                          const SizedBox(width: 10),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade50,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: IconButton(
+                                              onPressed: () async {
+                                                if (isFavorite) {
+                                                  await FavoriteService.removeFavorite(manga);
+                                                } else {
+                                                  await FavoriteService.addFavorite(manga);
+                                                }
+                                              },
+                                              icon: AnimatedSwitcher(
+                                                duration: const Duration(milliseconds: 300),
+                                                transitionBuilder: (child, animation) {
+                                                  return ScaleTransition(
+                                                    scale: animation,
+                                                    child: child,
+                                                  );
+                                                },
+                                                child: Icon(
+                                                  isFavorite
+                                                      ? Icons.favorite
+                                                      : Icons.favorite_border,
+                                                  key: ValueKey(isFavorite),
+                                                  color: Colors.red,
+                                                  size: 28,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
                 );

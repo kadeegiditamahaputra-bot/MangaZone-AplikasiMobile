@@ -29,10 +29,35 @@ class Manga {
       chapters: json['chapters'] ?? 0,
       synopsis: json['synopsis'] ?? '',
       genres: (json['genres'] as List?)
-              ?.map((e) => e['name'].toString())
-              .toList() ??
+          ?.map((e) => e['name'].toString())
+          .toList() ??
           [],
       isFavorite: false,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'malId': malId,
+      'title': title,
+      'imageUrl': imageUrl,
+      'score': score,
+      'genres': genres,
+      'chapters': chapters,
+      'synopsis': synopsis,
+    };
+  }
+
+  factory Manga.fromFirestore(Map<String, dynamic> data) {
+    return Manga(
+      malId: data['malId'],
+      title: data['title'],
+      imageUrl: data['imageUrl'],
+      score: (data['score'] ?? 0).toDouble(),
+      genres: List<String>.from(data['genres'] ?? []),
+      chapters: data['chapters'] ?? 0,
+      synopsis: data['synopsis'] ?? '',
+      isFavorite: true,
     );
   }
 }

@@ -19,7 +19,10 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      await _googleSignIn.signOut();
+
+      final GoogleSignInAccount? googleUser =
+      await _googleSignIn.signIn();
 
       if (googleUser == null) return;
 
@@ -36,16 +39,7 @@ class _LoginPageState extends State<LoginPage> {
 
       final user = userCredential.user;
 
-
-      debugPrint("USER: ${FirebaseAuth.instance.currentUser}");
-
       if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Selamat Datang ${user?.displayName}"),
-        ),
-      );
 
       Navigator.pushReplacement(
         context,

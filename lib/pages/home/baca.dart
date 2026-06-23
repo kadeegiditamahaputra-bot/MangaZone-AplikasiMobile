@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:auto_size_text/auto_size_text.dart'; // 🔹 Tambahin package ini
-import '../../models/manga.dart';
-import '../../services/favorite_manager.dart';
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../models/manga.dart';
+import '../../services/favorite_service.dart';
 
 class Baca extends StatefulWidget {
   final Manga manga;
@@ -20,7 +22,7 @@ class _BacaState extends State<Baca> {
     final totalChapter = manga.chapters > 0 ? manga.chapters : 20;
     final chapters = List.generate(
       totalChapter,
-      (i) => "Chapter ${totalChapter - i}",
+          (i) => "Chapter ${totalChapter - i}",
     );
 
     return Scaffold(
@@ -36,33 +38,41 @@ class _BacaState extends State<Baca> {
               onTap: () => Navigator.pop(context),
             ),
             actions: [
-              FavoriteButton(
-                isFavorite: manga.isFavorite,
-                onTap: () {
-                  setState(() {
-                    if (manga.isFavorite) {
-                      FavoriteManager.removeFavorite(manga);
-                    } else {
-                      FavoriteManager.addFavorite(manga);
-                    }
-                    manga.isFavorite = !manga.isFavorite;
-                  });
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .collection('favorites')
+                    .doc(manga.malId.toString())
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final isFavorite = snapshot.data?.exists ?? false;
+
+                  return FavoriteButton(
+                    isFavorite: isFavorite,
+                    onTap: () async {
+                      if (isFavorite) {
+                        await FavoriteService.removeFavorite(manga);
+                      } else {
+                        await FavoriteService.addFavorite(manga);
+                      }
+                    },
+                  );
                 },
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               title: Tooltip(
-                message: manga
-                    .title, // 🔹 tampilkan judul penuh saat hover/long press
+                message: manga.title,
                 child: AutoSizeText(
                   manga.title,
                   maxLines: 1,
-                  minFontSize: 12, // 🔹 otomatis mengecil kalau kepanjangan
+                  minFontSize: 12,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               background: Stack(
@@ -93,7 +103,7 @@ class _BacaState extends State<Baca> {
           ),
           SliverList(
             delegate: SliverChildBuilderDelegate(
-              (context, index) => ChapterListTile(
+                  (context, index) => ChapterListTile(
                 chapterName: chapters[index],
                 number: totalChapter - index,
               ),
@@ -125,8 +135,7 @@ class FavoriteButton extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onTap;
 
-  const FavoriteButton(
-      {super.key, required this.isFavorite, required this.onTap});
+  const FavoriteButton({super.key, required this.isFavorite, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -162,15 +171,15 @@ class MangaDetail extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Tooltip(
-            message: manga.title, // 🔹 tooltip juga di detail
+            message: manga.title,
             child: AutoSizeText(
               manga.title,
-              maxLines: 2, // 🔹 di detail boleh 2 baris
+              maxLines: 2,
               minFontSize: 14,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -240,8 +249,7 @@ class ChapterListTile extends StatelessWidget {
   final String chapterName;
   final int number;
 
-  const ChapterListTile(
-      {super.key, required this.chapterName, required this.number});
+  const ChapterListTile({super.key, required this.chapterName, required this.number});
 
   @override
   Widget build(BuildContext context) {
@@ -263,8 +271,7 @@ class ChapterListTile extends StatelessWidget {
           ],
         ),
         child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
           leading: Container(
             width: 45,
             height: 45,
