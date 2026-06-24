@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'settings_page.dart';
+import 'premium.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -230,11 +231,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 15),
                     ElevatedButton.icon(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              "Fitur Premium masih dalam pengembangan",
-                            ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PremiumPage(),
                           ),
                         );
                       },

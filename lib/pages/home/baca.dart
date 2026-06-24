@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../models/manga.dart';
 import '../../services/favorite_service.dart';
+import 'iklan.dart';
 
 class Baca extends StatefulWidget {
   final Manga manga;
@@ -254,9 +255,16 @@ class ChapterListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Membuka $chapterName")),
-      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => IklanPage(
+              chapterName: chapterName,
+            ),
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
         decoration: BoxDecoration(

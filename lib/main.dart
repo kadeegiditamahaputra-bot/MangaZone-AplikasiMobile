@@ -1,4 +1,5 @@
-import 'pages/login/login_page.dart';
+import 'pages/login/auth_wrapper.dart';
+//import 'pages/login/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -52,7 +53,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const LoginPage(),
+      home: const AuthWrapper(),
     );
   }
 }
