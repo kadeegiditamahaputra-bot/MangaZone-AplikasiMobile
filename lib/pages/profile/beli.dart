@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'konfirmasi.dart';
 
 class BeliPage extends StatelessWidget {
   final String paket;
@@ -81,15 +82,20 @@ class BeliPage extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Silakan pilih metode pembayaran yang tersedia"),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => KonfirmasiPage(
+                        paket: paket,
+                        harga: harga,
+                      ),
                     ),
                   );
                 },
                 icon: const Icon(Icons.payment),
                 label: const Text("Lanjut ke Pembayaran"),
               ),
+
             ),
           ],
         ),

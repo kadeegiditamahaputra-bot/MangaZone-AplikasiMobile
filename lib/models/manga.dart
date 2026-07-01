@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Manga {
   final int malId;
   final String title;
@@ -21,17 +23,28 @@ class Manga {
   });
 
   factory Manga.fromJson(Map<String, dynamic> json) {
+    // Handle genres fleksibel: bisa List dari API, bisa String JSON dari DB
+    List<String> parsedGenres = [];
+    if (json['genres'] is List) {
+      parsedGenres = (json['genres'] as List)
+          .map((e) => e is Map ? e['name'].toString() : e.toString())
+          .toList();
+    } else if (json['genres'] is String) {
+      try {
+        parsedGenres = List<String>.from(jsonDecode(json['genres']));
+      } catch (_) {
+        parsedGenres = [];
+      }
+    }
+
     return Manga(
-      malId: json['mal_id'],
+      malId: json['mal_id'] ?? json['malId'] ?? 0,
       title: json['title'] ?? '',
-      imageUrl: json['images']['jpg']['image_url'] ?? '',
+      imageUrl: json['images']?['jpg']?['image_url'] ?? json['imageUrl'] ?? '',
       score: (json['score'] ?? 0).toDouble(),
       chapters: json['chapters'] ?? 0,
       synopsis: json['synopsis'] ?? '',
-      genres: (json['genres'] as List?)
-          ?.map((e) => e['name'].toString())
-          .toList() ??
-          [],
+      genres: parsedGenres,
       isFavorite: false,
     );
   }
@@ -50,14 +63,14 @@ class Manga {
 
   factory Manga.fromFirestore(Map<String, dynamic> data) {
     return Manga(
-      malId: data['malId'],
-      title: data['title'],
-      imageUrl: data['imageUrl'],
+      malId: data['malId'] ?? 0,
+      title: data['title'] ?? '',
+      imageUrl: data['imageUrl'] ?? '',
       score: (data['score'] ?? 0).toDouble(),
       genres: List<String>.from(data['genres'] ?? []),
       chapters: data['chapters'] ?? 0,
       synopsis: data['synopsis'] ?? '',
-      isFavorite: true,
+      isFavorite: data['isFavorite'] ?? true,
     );
   }
 }

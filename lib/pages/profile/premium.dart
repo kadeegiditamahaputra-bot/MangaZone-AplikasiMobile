@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'beli.dart';
+import 'konfirmasi.dart';
 
 class PremiumPage extends StatelessWidget {
   const PremiumPage({super.key});
@@ -36,12 +36,6 @@ class PremiumPage extends StatelessWidget {
 
             _premiumCard(
               context,
-              title: "1 Bulan",
-              price: "Rp10.000",
-            ),
-
-            _premiumCard(
-              context,
               title: "3 Bulan",
               price: "Rp25.000",
             ),
@@ -67,7 +61,7 @@ class PremiumPage extends StatelessWidget {
       elevation: 3,
       child: ListTile(
         leading: const Icon(
-          Icons.star,
+          Icons.workspace_premium,
           color: Colors.amber,
         ),
         title: Text(
@@ -78,16 +72,20 @@ class PremiumPage extends StatelessWidget {
         ),
         subtitle: Text(price),
         trailing: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
+          onPressed: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => BeliPage(
+                builder: (_) => KonfirmasiPage(
                   paket: title,
                   harga: price,
                 ),
               ),
             );
+
+            if (result == true && context.mounted) {
+              Navigator.pop(context, true);
+            }
           },
           child: const Text("Beli"),
         ),

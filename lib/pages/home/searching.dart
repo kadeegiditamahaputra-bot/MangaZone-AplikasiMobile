@@ -23,7 +23,7 @@ class _SearchingPageState extends State<SearchingPage> {
 
   Future<void> _loadManga() async {
     try {
-      final mangas = await ApiService.getTopManga();
+      final mangas = await ApiService.getManga();
 
       setState(() {
         _allManga = mangas;

@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/manga.dart';
 import '../../services/favorite_service.dart';
 import 'iklan.dart';
+import 'reader_page.dart';
 
 class Baca extends StatefulWidget {
   final Manga manga;
@@ -17,6 +18,37 @@ class Baca extends StatefulWidget {
 }
 
 class _BacaState extends State<Baca> {
+  // PERBAIKAN: Fungsi _isPremium dipindahkan ke dalam State class
+  Future<bool> _isPremium() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return false; // Antisipasi jika user belum login
+
+    final uid = currentUser.uid;
+
+    final doc = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(uid)
+        .get();
+
+    if (!doc.exists) return false;
+
+    final data = doc.data()!;
+
+    if (data["isPremium"] != true) return false;
+
+    if (data["premiumUntil"] == null) return false;
+
+    DateTime expired;
+
+    if (data["premiumUntil"] is Timestamp) {
+      expired = (data["premiumUntil"] as Timestamp).toDate();
+    } else {
+      expired = DateTime.parse(data["premiumUntil"]);
+    }
+
+    return expired.isAfter(DateTime.now());
+  }
+
   @override
   Widget build(BuildContext context) {
     final manga = widget.manga;
@@ -42,7 +74,7 @@ class _BacaState extends State<Baca> {
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('users')
-                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .doc(FirebaseAuth.instance.currentUser?.uid ?? '')
                     .collection('favorites')
                     .doc(manga.malId.toString())
                     .snapshots(),
@@ -81,7 +113,14 @@ class _BacaState extends State<Baca> {
                 children: [
                   Hero(
                     tag: manga.malId,
-                    child: Image.network(manga.imageUrl, fit: BoxFit.cover),
+                    child: Image.network(
+                      manga.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.broken_image,
+                            size: 60, color: Colors.grey),
+                      ),
+                    ),
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -102,11 +141,46 @@ class _BacaState extends State<Baca> {
           SliverToBoxAdapter(
             child: MangaDetail(manga: manga),
           ),
+          // Judul Daftar Chapter diletakkan di sini agar rapi sebelum list
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(left: 20, top: 10, bottom: 10),
+              child: Text(
+                "Daftar Chapter",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
           SliverList(
             delegate: SliverChildBuilderDelegate(
                   (context, index) => ChapterListTile(
                 chapterName: chapters[index],
                 number: totalChapter - index,
+                onTap: () async {
+                  final premium = await _isPremium();
+
+                  if (!context.mounted) return;
+
+                  if (premium) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReaderPage(
+                          chapterName: chapters[index],
+                        ),
+                      ),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => IklanPage(
+                          chapterName: chapters[index],
+                        ),
+                      ),
+                    );
+                  }
+                },
               ),
               childCount: chapters.length,
             ),
@@ -136,7 +210,8 @@ class FavoriteButton extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onTap;
 
-  const FavoriteButton({super.key, required this.isFavorite, required this.onTap});
+  const FavoriteButton(
+      {super.key, required this.isFavorite, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -196,8 +271,6 @@ class MangaDetail extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           Text(manga.synopsis, style: const TextStyle(height: 1.5)),
-          const Text("Daftar Chapter",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -249,37 +322,38 @@ class GenreChip extends StatelessWidget {
 class ChapterListTile extends StatelessWidget {
   final String chapterName;
   final int number;
+  final VoidCallback onTap;
 
-  const ChapterListTile({super.key, required this.chapterName, required this.number});
+  const ChapterListTile({
+    super.key,
+    required this.chapterName,
+    required this.number,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => IklanPage(
-              chapterName: chapterName,
-            ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 10,
+          ),
           leading: Container(
             width: 45,
             height: 45,
@@ -287,18 +361,26 @@ class ChapterListTile extends StatelessWidget {
               color: const Color(0xFF6A11CB),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(
-              child: Text(
-                "$number",
-                style: const TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.bold),
+            alignment: Alignment.center,
+            child: Text(
+              number.toString(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          title: Text(chapterName,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Text(
+            chapterName,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           subtitle: const Text("Tap untuk membaca"),
-          trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
+          trailing: const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 18,
+          ),
         ),
       ),
     );

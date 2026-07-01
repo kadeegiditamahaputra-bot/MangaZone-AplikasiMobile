@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'pages/transaksi/notifikasi_pembayaran.dart';
 
 // Pages MangaZone
 import 'pages/home/home_page.dart';
@@ -21,6 +22,7 @@ import 'dart:io' show Platform;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.init();
 
   // Init Firebase
   await Firebase.initializeApp(
