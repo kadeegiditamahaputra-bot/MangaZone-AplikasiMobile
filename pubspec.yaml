@@ -50,6 +50,7 @@ dependencies:
   # State Management
   provider: ^6.1.5+1
   auto_size_text: ^3.0.0
+  translator: ^1.0.4+1
 
 dev_dependencies:
   flutter_test:

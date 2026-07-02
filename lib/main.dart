@@ -50,8 +50,11 @@ class MyApp extends StatelessWidget {
       title: 'MangaZone',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        // Menyelaraskan warna dasar aplikasi ke Dark Mode secara menyeluruh
+        scaffoldBackgroundColor: const Color(0xFF0B0B14),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
+          seedColor: Colors.deepPurpleAccent,
+          brightness: Brightness.dark, // Mengaktifkan optimasi sistem berbasis gelap
         ),
         useMaterial3: true,
       ),
@@ -70,68 +73,164 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
+  // Menggunakan PageController agar perpindahan halaman bisa dianimasikan dengan mulus (Slick)
+  final PageController _pageController = PageController();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget currentPage;
-
-    switch (_selectedIndex) {
-      case 0:
-        currentPage = const HomePage();
-        break;
-      case 1:
-        currentPage = const FavoritePage();
-        break;
-      case 2:
-        currentPage = const TransaksiPage();
-        break;
-      case 3:
-        currentPage = const ProfilePage();
-        break;
-      default:
-        currentPage = const HomePage();
-    }
-
-    // Ambil user Google
     final User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      body: currentPage,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorite',
-          ),
+      // Background disamakan persis dengan warna bioskop digital HomePage
+      backgroundColor: const Color(0xFF0B0B14),
 
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.payment),
-            label: 'transaksi',
-          ),
-          BottomNavigationBarItem(
-            icon: user?.photoURL != null
-                ? CircleAvatar(
-              radius: 12,
-              backgroundImage: NetworkImage(user!.photoURL!),
-            )
-                : const Icon(Icons.person),
-            label: 'Profile',
-          ),
+      // Menggunakan Stack agar bar navigasi bisa mengambang (Floating Effect) di atas konten jika diinginkan
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(), // Menghindari ketidaksengajaan geser manual swipe
+        children: const [
+          HomePage(),
+          FavoritePage(),
+          TransaksiPage(),
+          ProfilePage(),
         ],
+      ),
+
+      // Desain Bar Navigasi Premium Custom Menyaingi Aplikasi Streaming Global
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0B0B14),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withOpacity(0.04), // Garis pembatas tipis yang sangat elegan
+              width: 1,
+            ),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
+                _buildNavItem(1, Icons.favorite_rounded, Icons.favorite_border_rounded, 'Favorite'),
+                _buildNavItem(2, Icons.account_balance_wallet_rounded, Icons.account_balance_wallet_outlined, 'Transaksi'),
+                _buildProfileNavItem(3, user),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Builder Item Navigasi Kustom Beranimasi Neon
+  Widget _buildNavItem(int index, IconData selectedIcon, IconData unselectedIcon, String label) {
+    final bool isSelected = _selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          // Membuat background kapsul menyala saat ikon aktif
+          color: isSelected ? Colors.deepPurpleAccent.withOpacity(0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              color: isSelected ? Colors.deepPurpleAccent : Colors.white60,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.deepPurpleAccent : Colors.white38,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Builder Khusus untuk Foto Profil Google Agar Presisi dan Mewah
+  Widget _buildProfileNavItem(int index, User? user) {
+    final bool isSelected = _selectedIndex == index;
+
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.deepPurpleAccent.withOpacity(0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(1.5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // Bingkai bersinar tipis warna ungu di sekitar foto jika dipilih
+                border: Border.all(
+                  color: isSelected ? Colors.deepPurpleAccent : Colors.white24,
+                  width: 1.5,
+                ),
+              ),
+              child: user?.photoURL != null
+                  ? CircleAvatar(
+                radius: 10,
+                backgroundImage: NetworkImage(user!.photoURL!),
+              )
+                  : Icon(
+                isSelected ? Icons.person_rounded : Icons.person_outline_rounded,
+                color: isSelected ? Colors.deepPurpleAccent : Colors.white60,
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Profile',
+              style: TextStyle(
+                color: isSelected ? Colors.deepPurpleAccent : Colors.white38,
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

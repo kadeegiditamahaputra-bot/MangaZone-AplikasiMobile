@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 import 'settings_page.dart';
 import 'premium.dart';
@@ -43,11 +44,8 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!doc.exists) return;
 
     final data = doc.data()!;
-
     bool premium = data["isPremium"] ?? false;
-
     DateTime? until;
-
     final premiumData = data["premiumUntil"];
 
     if (premiumData != null) {
@@ -65,7 +63,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _pickImage() async {
-
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -89,14 +86,11 @@ class _ProfilePageState extends State<ProfilePage> {
       debugPrint("Error mengambil gambar: $e");
     }
   }
+
   String _formatDate(DateTime? date) {
     if (date == null) return "-";
-
-    return "${date.day.toString().padLeft(2, '0')}/"
-        "${date.month.toString().padLeft(2, '0')}/"
-        "${date.year}";
+    return DateFormat('dd MMM yyyy').format(date);
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -111,128 +105,227 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return Scaffold(
+      // Konsisten dengan skema warna gelap bioskop aplikasi kita
+      backgroundColor: const Color(0xFF0B0B14),
       appBar: AppBar(
-        title: const Text("My Profile", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.deepPurple,
-        centerTitle: true,
+        title: const Padding(
+          padding: EdgeInsets.only(left: 4.0),
+          child: Row(
+            children: [
+              const Text(
+                "My",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 24,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                "Profile",
+                style: TextStyle(
+                  color: Colors.deepPurpleAccent,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 24,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: const Color(0xFF0B0B14),
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        automaticallyImplyLeading: false, // Bersih tanpa tombol back otomatis
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SettingsPage()),
-              );
-            },
+          // Tombol setting dipindah ke pojok kanan atas agar clean dan pro
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: _circleButton(
+              icon: Icons.settings_rounded,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+            ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         child: Column(
           children: [
+            // KARTU PROFIL UTAMA (Gaya Cyber & Premium Neon)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Colors.deepPurple, Colors.purpleAccent],
+                // Jika premium dapet efek gradasi emas-ungu neon, jika reguler dapet ungu-gelap
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: _isPremium
+                      ? [const Color(0xFF1E1435), const Color(0xFF2D1B2A)]
+                      : [const Color(0xFF141424), const Color(0xFF1B1435)],
                 ),
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: _isPremium
+                      ? Colors.amberAccent.withOpacity(0.15)
+                      : Colors.deepPurpleAccent.withOpacity(0.1),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  )
+                ],
               ),
               child: Column(
                 children: [
+                  // Avatar dengan Indikator Border Interaktif
                   GestureDetector(
                     onTap: _pickImage,
-                    child: CircleAvatar(
-                      radius: 55,
-                      backgroundColor: Colors.white,
-                      backgroundImage: profileProvider,
-                      child: profileProvider == null
-                          ? const Icon(
-                        Icons.person,
-                        size: 60,
-                        color: Colors.grey,
-                      )
-                          : null,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(3.0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: _isPremium
+                                  ? [Colors.amber, Colors.orangeAccent]
+                                  : [Colors.deepPurpleAccent, Colors.purpleAccent],
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 52,
+                            backgroundColor: const Color(0xFF0B0B14),
+                            backgroundImage: profileProvider,
+                            child: profileProvider == null
+                                ? const Icon(
+                              Icons.person_rounded,
+                              size: 55,
+                              color: Colors.white24,
+                            )
+                                : null,
+                          ),
+                        ),
+                        // Tombol edit foto kecil di pojok avatar
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _isPremium ? Colors.amber : Colors.deepPurpleAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: const Color(0xFF0B0B14), width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 14,
+                            color: Colors.black,
+                          ),
+                        )
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+
+                  // Nama User
                   Text(
-                    _user?.displayName ?? "User",
+                    _user?.displayName ?? "MangaZone User",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
                     ),
                   ),
+                  const SizedBox(height: 4),
+
+                  // Email User
                   Text(
-                    _user?.email ?? "",
-                    style: const TextStyle(color: Colors.white70),
+                    _user?.email ?? "pembaca@mangazone.com",
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
 
-
+                  // KONDISI BADGE PREMIUM ATAU TOMBOL UPGRADE
                   if (_isPremium) ...[
-                    const SizedBox(height: 15),
-
+                    const SizedBox(height: 20),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(.2),
-                        borderRadius: BorderRadius.circular(30),
+                        color: Colors.amber.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.amber.withOpacity(0.15), width: 1),
                       ),
-                      child: Column(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Row(
-                            mainAxisSize: MainAxisSize.min,
+                          const Icon(Icons.workspace_premium_rounded, color: Colors.amber, size: 24),
+                          const SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.workspace_premium,
-                                color: Colors.amber,
-                              ),
-                              SizedBox(width: 8),
-                              Text(
+                              const Text(
                                 "Premium Member",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Colors.amber,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "Aktif s.d ${_formatDate(_premiumUntil)}",
+                                style: TextStyle(
+                                  color: Colors.amber.withOpacity(0.7),
+                                  fontSize: 11,
                                 ),
                               ),
                             ],
-                          ),
-
-                          const SizedBox(height: 6),
-
-                          Text(
-                            "Aktif sampai\n${_formatDate(_premiumUntil)}",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                            ),
-                          ),
+                          )
                         ],
                       ),
                     ),
                   ] else ...[
-                    const SizedBox(height: 15),
-
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const PremiumPage(),
+                    const SizedBox(height: 20),
+                    // Tombol Upgrade Gaya Moderen & Sporty
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurpleAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                        );
-
-                        _loadPremiumStatus();
-                      },
-                      icon: const Icon(Icons.workspace_premium),
-                      label: const Text("Upgrade Sekarang"),
+                          elevation: 0,
+                        ),
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const PremiumPage()),
+                          );
+                          _loadPremiumStatus();
+                        },
+                        icon: const Icon(Icons.workspace_premium_rounded, size: 18),
+                        label: const Text(
+                          "Upgrade ke Premium",
+                          style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.2),
+                        ),
+                      ),
                     ),
                   ]
                 ],
@@ -241,76 +334,125 @@ class _ProfilePageState extends State<ProfilePage> {
 
             const SizedBox(height: 20),
 
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+            // KARTU DETAIL INFORMASI AKUN (Sleek Dark List)
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF141424),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withOpacity(0.02)),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Column(
                   children: [
-                    ListTile(
-                      leading: const Icon(Icons.person),
-                      title: const Text("Nama"),
-                      subtitle: Text(_user?.displayName ?? "-"),
+                    _buildProfileTile(
+                      icon: Icons.person_outline_rounded,
+                      title: "Nama",
+                      value: _user?.displayName ?? "-",
                     ),
-
-                    const Divider(),
-
-                    ListTile(
-                      leading: const Icon(Icons.email),
-                      title: const Text("Email"),
-                      subtitle: Text(_user?.email ?? "-"),
+                    _buildDivider(),
+                    _buildProfileTile(
+                      icon: Icons.mail_outline_rounded,
+                      title: "Email",
+                      value: _user?.email ?? "-",
                     ),
-
-                    const Divider(),
-
-                    ListTile(
-                      leading: const Icon(Icons.verified_user),
-                      title: const Text("Email Terverifikasi"),
-                      subtitle: Text(
-                        _user?.emailVerified == true
-                            ? "Ya"
-                            : "Belum",
-                      ),
+                    _buildDivider(),
+                    _buildProfileTile(
+                      icon: Icons.verified_user_outlined,
+                      title: "Email Terverifikasi",
+                      value: _user?.emailVerified == true ? "Ya, Terverifikasi" : "Belum",
+                      valueColor: _user?.emailVerified == true ? Colors.greenAccent : Colors.white38,
                     ),
-
-                    const Divider(),
-
-                    ListTile(
-                      leading: const Icon(Icons.calendar_today),
-                      title: const Text("Tanggal Pembuatan Akun"),
-                      subtitle: Text(
-                        _user?.metadata.creationTime
-                            ?.toLocal()
-                            .toString()
-                            .split(" ")
-                            .first ??
-                            "-",
-                      ),
+                    _buildDivider(),
+                    _buildProfileTile(
+                      icon: Icons.calendar_today_rounded,
+                      title: "Tanggal Pembuatan Akun",
+                      value: _user?.metadata.creationTime
+                          ?.toLocal()
+                          .toString()
+                          .split(" ")
+                          .first ?? "-",
                     ),
-
-                    const Divider(),
-
-                    ListTile(
-                      leading: const Icon(Icons.access_time),
-                      title: const Text("Login Terakhir"),
-                      subtitle: Text(
-                        _user?.metadata.lastSignInTime
-                            ?.toLocal()
-                            .toString()
-                            .replaceFirst(".000", "") ??
-                            "-",
-                      ),
+                    _buildDivider(),
+                    _buildProfileTile(
+                      icon: Icons.access_time_rounded,
+                      title: "Login Terakhir",
+                      value: _user?.metadata.lastSignInTime
+                          ?.toLocal()
+                          .toString()
+                          .replaceFirst(".000", "") ?? "-",
                     ),
-
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Widget Pembantu: Membuat item list profile yang elegan
+  Widget _buildProfileTile({
+    required IconData icon,
+    required String title,
+    required String value,
+    Color valueColor = Colors.white70,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.deepPurpleAccent.withOpacity(0.6), size: 22),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white38,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: valueColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      color: Colors.white.withOpacity(0.03),
+      indent: 58,
+      endIndent: 20,
+      height: 1,
+    );
+  }
+
+  Widget _circleButton({required IconData icon, required VoidCallback onTap}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(0.08), width: 1),
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: Colors.white, size: 20),
+        onPressed: onTap,
       ),
     );
   }
